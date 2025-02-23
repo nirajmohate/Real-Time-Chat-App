@@ -207,18 +207,14 @@ export default function Chat() {
     fetchUser();
   }, []);
 
-
   useEffect(() => {
     console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
 
     fetch(`${import.meta.env.VITE_BACKEND_URL}/test`)
-      .then(res => res.json())
-      .then(data => console.log("Backend Response:", data))
-      .catch(err => console.error("Fetch Error:", err));
+      .then((res) => res.json())
+      .then((data) => console.log("Backend Response:", data))
+      .catch((err) => console.error("Fetch Error:", err));
   }, []);
-
-  
-
 
   useEffect(() => {
     if (currentUser) {
@@ -241,7 +237,7 @@ export default function Chat() {
             `${allUsersRoute}/${currentUser._id}`
           );
           setContacts(data);
-        } else {
+        } else { 
           navigate("/setAvatar");
         }
       }
