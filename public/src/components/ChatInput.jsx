@@ -11,11 +11,15 @@ export default function ChatInput({ handleSendMsg }) {
     setShowEmojiPicker(!showEmojiPicker);
   };
 
-  const handleEmojiClick = (event, emojiObject) => {
-    let message = msg;
-    message += emojiObject.emoji;
-    setMsg(message);
+  // const handleEmojiClick = (event, emojiObject) => {
+  //   let message = msg;
+  //   message += emojiObject.emoji;
+  //   setMsg(message);
+  // };
+  const handleEmojiClick = (emojiObject) => {
+    setMsg((prevMsg) => prevMsg + emojiObject.emoji);
   };
+  
 
   const sendChat = (event) => {
     event.preventDefault();
