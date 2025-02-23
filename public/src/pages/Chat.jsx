@@ -52,7 +52,7 @@
 //           <Contacts contacts={contacts} changeChat={handleChatChange} />
 //           {currentChat === undefined ? (
 //             <Welcome />
-            
+
 //           ) : (
 //             <ChatContainer currentChat={currentChat} socket={socket} />
 //           )}
@@ -82,12 +82,6 @@
 //     }
 //   }
 // `;
-
-
-
-
-
-
 
 // import React, { useEffect, useState, useRef } from "react";
 // import axios from "axios";
@@ -185,10 +179,6 @@
 //   }
 // `;
 
-
-
-
-
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -211,18 +201,30 @@ export default function Chat() {
       if (!localStorage.getItem("chat-app-user")) {
         navigate("/login");
       } else {
-        setCurrentUser(
-          await JSON.parse(localStorage.getItem("chat-app-user"))
-        );
+        setCurrentUser(await JSON.parse(localStorage.getItem("chat-app-user")));
       }
     };
     fetchUser();
   }, []);
 
+
+  useEffect(() => {
+    console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
+
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/test`)
+      .then(res => res.json())
+      .then(data => console.log("Backend Response:", data))
+      .catch(err => console.error("Fetch Error:", err));
+  }, []);
+
+  
+
+
   useEffect(() => {
     if (currentUser) {
       socket.current = io(host);
       socket.current.emit("add-user", currentUser._id);
+      console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
     }
     return () => {
       if (socket.current) {
@@ -235,7 +237,9 @@ export default function Chat() {
     const fetchContacts = async () => {
       if (currentUser) {
         if (currentUser.isAvatarImageSet) {
-          const { data } = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+          const { data } = await axios.get(
+            `${allUsersRoute}/${currentUser._id}`
+          );
           setContacts(data);
         } else {
           navigate("/setAvatar");
@@ -253,7 +257,11 @@ export default function Chat() {
     <Container>
       <div className="container">
         <Contacts contacts={contacts} changeChat={handleChatChange} />
-        {currentChat === undefined ? <Welcome /> : <ChatContainer currentChat={currentChat} socket={socket} />}
+        {currentChat === undefined ? (
+          <Welcome />
+        ) : (
+          <ChatContainer currentChat={currentChat} socket={socket} />
+        )}
       </div>
     </Container>
   );

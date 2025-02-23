@@ -73,11 +73,21 @@ require("dotenv").config();
 const app = express();
 
 // ✅ FIX: Updated CORS to allow frontend access
+// app.use(
+//   cors({
+//     origin: "http://localhost:5173", // Allow frontend access
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     credentials: true, // Allow cookies and authentication
+//   })
+// );
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow frontend access
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend.onrender.com",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true, // Allow cookies and authentication
+    credentials: true,
   })
 );
 
@@ -100,18 +110,39 @@ app.get("/ping", (_req, res) => res.json({ msg: "Ping Successful" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
+app.get("/test", (req, res) => {
+  res.json({ message: "Backend is connected!" });
+});
+
+app.get("/", (req, res) => {
+  res.send("Backend is working!");
+});
+
+
 const server = app.listen(PORT, () =>
   console.log(`Server started on port ${PORT}`)
 );
 
 // ✅ FIX: Update Socket.IO CORS settings
+// const io = socket(server, {
+//   cors: {
+//     origin: "http://localhost:5173", // Allow frontend to connect
+//     methods: ["GET", "POST"],
+//     credentials: true,
+//   },
+// });
 const io = socket(server, {
   cors: {
-    origin: "http://localhost:5173", // Allow frontend to connect
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend.onrender.com",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
+
+
 
 // ✅ FIX: Ensure global variable is properly initialized
 global.onlineUsers = new Map();
