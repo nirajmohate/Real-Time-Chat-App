@@ -84,7 +84,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://real-time-chat-app-6y6v.vercel.app/",
+      "https://real-time-chat-app-6y6v.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
