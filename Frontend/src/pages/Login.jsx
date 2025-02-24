@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import { useNavigate, Link } from "react-router-dom";
-import Logo from "../assets/logo.svg";
+import Logo from "../assets/chat.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { loginRoute } from "../utils/APIRoutes";
@@ -150,7 +150,7 @@ const FormContainer = styled.div`
     color: white;
     text-transform: uppercase;
     a {
-      color: #4e0eff;
+      color:  #4e0eff;
       text-decoration: none;
       font-weight: bold;
     }
