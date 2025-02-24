@@ -23,13 +23,6 @@ export default function Register() {
     confirmPassword: "",
   });
 
-  // useEffect(() => {
-  //   if (localStorage.getItem("chat-app-user")) {
-  //     navigate("/");
-  //   }
-  // }, []);
-  // console.log("Localhost Key:", "chat-app-user");
-
   const handleChange = (event) => {
     setValues({ ...values, [event.target.name]: event.target.value });
   };
@@ -75,13 +68,7 @@ export default function Register() {
       if (data.status === false) {
         toast.error(data.msg, toastOptions);
       }
-      // if (data.status === true) {
-      //   localStorage.setItem(
-      //     import.meta.env.VITE_LOCALHOST_KEY,
-      //     JSON.stringify(data.user)
-      //   );
-      //   navigate("/");
-      // }
+      
       if (data.status === true) {
         localStorage.setItem(
           "chat-app-user",

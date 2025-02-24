@@ -17,14 +17,6 @@ export default function Login() {
     draggable: true,
     theme: "dark",
   };
-  // useEffect(() => {
-  //   if (localStorage.getItem(import.meta.env.VITE_LOCALHOST_KEY)) {
-  //     navigate("/");
-  //   }
-  //   // if (localStorage.getItem("chat-app-user")) {
-  //   //   navigate("/");
-  //   // }
-  // }, []);
 
   const handleChange = (event) => {
     setValues({ ...values, [event.target.name]: event.target.value });

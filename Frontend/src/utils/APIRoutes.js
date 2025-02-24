@@ -1,5 +1,3 @@
-// export const host = "http://localhost:5000";
-// export const host = "import.meta.env.VITE_BACKEND_URL";
 export const host = import.meta.env.VITE_BACKEND_URL;
 
 export const loginRoute = `${host}/api/auth/login`;
