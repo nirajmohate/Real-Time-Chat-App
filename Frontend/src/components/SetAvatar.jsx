@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import axios from "axios";
+import axios from "../utils/axiosInstance";
 import loader from "../assets/loader.gif";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -44,7 +44,7 @@ export default function SetAvatar() {
     }
 
     try {
-      const { data } = await axios.post(`${setAvatarRoute}/${user._id}`, {
+      const { data } = await axios.post(setAvatarRoute, {
         image: avatars[selectedAvatar],
       });
 

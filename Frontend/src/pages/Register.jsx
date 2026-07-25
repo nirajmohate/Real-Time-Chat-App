@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../utils/axiosInstance";
 import styled from "styled-components";
 import { useNavigate, Link } from "react-router-dom";
 import Logo from "../assets/chat.png";
@@ -70,6 +70,7 @@ export default function Register() {
       }
       
       if (data.status === true) {
+        localStorage.setItem("chat-app-token", data.token);
         localStorage.setItem(
           "chat-app-user",
           JSON.stringify(data.user)

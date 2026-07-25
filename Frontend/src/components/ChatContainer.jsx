@@ -3,7 +3,8 @@ import styled from "styled-components";
 import ChatInput from "./ChatInput";
 import Logout from "./Logout";
 import { v4 as uuidv4 } from "uuid";
-import axios from "axios";
+import axios from "../utils/axiosInstance";
+import { toast } from "react-toastify";
 import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
 
 export default function ChatContainer({ currentChat, socket }) {
@@ -15,17 +16,23 @@ export default function ChatContainer({ currentChat, socket }) {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const data = JSON.parse(localStorage.getItem("chat-app-user"));
-        if (!data || !currentChat) return;
+        if (!currentChat) return;
 
+        // Note: no "from" is sent — the backend identifies the sender
+        // from the login token, and rejects this if the two of you
+        // aren't actually connected.
         const response = await axios.post(recieveMessageRoute, {
-          from: data._id,
           to: currentChat._id,
         });
 
         setMessages(response.data);
       } catch (error) {
         console.error("Error fetching messages:", error);
+        toast.error("Couldn't load messages for this chat.", {
+          position: "bottom-right",
+          autoClose: 4000,
+          theme: "dark",
+        });
       }
     };
 
@@ -35,17 +42,14 @@ export default function ChatContainer({ currentChat, socket }) {
   // ✅ Handle sending messages
   const handleSendMsg = async (msg) => {
     try {
-      const data = JSON.parse(localStorage.getItem("chat-app-user"));
-      if (!data || !currentChat) return;
+      if (!currentChat) return;
 
       socket?.current?.emit("send-msg", {
         to: currentChat._id,
-        from: data._id,
         msg,
       });
 
       await axios.post(sendMessageRoute, {
-        from: data._id,
         to: currentChat._id,
         message: msg,
       });
@@ -53,6 +57,11 @@ export default function ChatContainer({ currentChat, socket }) {
       setMessages((prev) => [...prev, { fromSelf: true, message: msg }]);
     } catch (error) {
       console.error("Error sending message:", error);
+      toast.error("Message failed to send.", {
+        position: "bottom-right",
+        autoClose: 4000,
+        theme: "dark",
+      });
     }
   };
 
@@ -60,12 +69,12 @@ export default function ChatContainer({ currentChat, socket }) {
   useEffect(() => {
     if (!socket?.current) return;
 
-    socket.current.on("msg-recieve", (msg) => {
+    socket.current.on("msg-receive", (msg) => {
       setArrivalMessage({ fromSelf: false, message: msg });
     });
 
     return () => {
-      socket.current.off("msg-recieve");
+      socket.current.off("msg-receive");
     };
   }, [socket]);
 

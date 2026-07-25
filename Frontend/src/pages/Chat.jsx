@@ -1,45 +1,54 @@
-import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import axios from "../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import styled from "styled-components";
-import { allUsersRoute, host } from "../utils/APIRoutes";
+import { toast } from "react-toastify";
+import {
+  allUsersRoute,
+  contactsRoute,
+  incomingRequestsRoute,
+  sendRequestRoute,
+  respondRequestRoute,
+  host,
+} from "../utils/APIRoutes";
 import ChatContainer from "../components/ChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
 
+const toastOptions = {
+  position: "bottom-right",
+  autoClose: 4000,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
+
 export default function Chat() {
   const navigate = useNavigate();
   const socket = useRef();
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] = useState([]); // accepted contacts only — chattable
+  const [allUsers, setAllUsers] = useState([]); // everyone, with relation status
+  const [requests, setRequests] = useState([]); // incoming pending requests
   const [currentChat, setCurrentChat] = useState(undefined);
   const [currentUser, setCurrentUser] = useState(undefined);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!localStorage.getItem("chat-app-user")) {
-        navigate("/login");
-      } else {
-        setCurrentUser(await JSON.parse(localStorage.getItem("chat-app-user")));
-      }
-    };
-    fetchUser();
-  }, []);
+    const token = localStorage.getItem("chat-app-token");
+    const userStr = localStorage.getItem("chat-app-user");
+    if (!token || !userStr) {
+      navigate("/login");
+    } else {
+      setCurrentUser(JSON.parse(userStr));
+    }
+  }, [navigate]);
 
-  useEffect(() => {
-    console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
-
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/test`)
-      .then((res) => res.json())
-      .then((data) => console.log("Backend Response:", data))
-      .catch((err) => console.error("Fetch Error:", err));
-  }, []);
-
+  // Connect the socket using the same login token — the server verifies
+  // it and figures out who we are; we can no longer just claim an id.
   useEffect(() => {
     if (currentUser) {
-      socket.current = io(host);
-      socket.current.emit("add-user", currentUser._id);
-      console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
+      const token = localStorage.getItem("chat-app-token");
+      socket.current = io(host, { auth: { token } });
     }
     return () => {
       if (socket.current) {
@@ -48,30 +57,73 @@ export default function Chat() {
     };
   }, [currentUser]);
 
-  useEffect(() => {
-    const fetchContacts = async () => {
-      if (currentUser) {
-        if (currentUser.isAvatarImageSet) {
-          const { data } = await axios.get(
-            `${allUsersRoute}/${currentUser._id}`
-          );
-          setContacts(data);
-        } else { 
-          navigate("/setAvatar");
-        }
-      }
-    };
-    fetchContacts();
+  const refreshLists = useCallback(async () => {
+    if (!currentUser) return;
+    const [{ data: users }, { data: friendContacts }, { data: incoming }] =
+      await Promise.all([
+        axios.get(allUsersRoute),
+        axios.get(contactsRoute),
+        axios.get(incomingRequestsRoute),
+      ]);
+    setAllUsers(users);
+    setContacts(friendContacts);
+    setRequests(incoming);
   }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.isAvatarImageSet) {
+        refreshLists();
+      } else {
+        navigate("/setAvatar");
+      }
+    }
+  }, [currentUser, navigate, refreshLists]);
 
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
   };
 
+  const handleSendRequest = async (userId) => {
+    try {
+      const { data } = await axios.post(`${sendRequestRoute}/${userId}`);
+      if (data.status) {
+        toast.success(data.msg, toastOptions);
+      } else {
+        toast.info(data.msg, toastOptions);
+      }
+      refreshLists();
+    } catch (err) {
+      toast.error("Couldn't send the request. Try again.", toastOptions);
+    }
+  };
+
+  const handleRespondRequest = async (requestId, accept) => {
+    try {
+      const { data } = await axios.post(
+        `${respondRequestRoute}/${requestId}/respond`,
+        { accept }
+      );
+      toast.info(data.msg, toastOptions);
+      refreshLists();
+    } catch (err) {
+      toast.error("Something went wrong. Try again.", toastOptions);
+    }
+  };
+
   return (
     <Container>
       <div className="container">
-        <Contacts contacts={contacts} changeChat={handleChatChange} />
+        <Contacts
+          currentUser={currentUser}
+          contacts={contacts}
+          allUsers={allUsers}
+          requests={requests}
+          currentChat={currentChat}
+          changeChat={handleChatChange}
+          onSendRequest={handleSendRequest}
+          onRespondRequest={handleRespondRequest}
+        />
         {currentChat === undefined ? (
           <Welcome />
         ) : (

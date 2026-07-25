@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth.js");
 const messageRoutes = require("./routes/messages");
 const socket = require("socket.io");
+const User = require("./models/userModel");
+const { verifySocketToken } = require("./middleware/auth");
 require("dotenv").config();
 
 const app = express();
@@ -61,17 +63,40 @@ const io = socket(server, {
 // ✅ FIX: Ensure global variable is properly initialized
 global.onlineUsers = new Map();
 
+// 🔒 Every socket connection must present the same login token used for
+// the REST API. This is what the userId comes from — a client can no
+// longer just claim to be any user by passing an id in "add-user".
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    const payload = verifySocketToken(token);
+    socket.userId = payload.id;
+    next();
+  } catch (err) {
+    next(new Error("Not authenticated"));
+  }
+});
+
 io.on("connection", (socket) => {
   global.chatSocket = socket;
+  onlineUsers.set(socket.userId, socket.id);
 
-  socket.on("add-user", (userId) => {
-    onlineUsers.set(userId, socket.id);
-  });
+  socket.on("send-msg", async (data) => {
+    try {
+      // 🔒 Only relay the message if sender and recipient are actually
+      // connected contacts — mirrors the same check used by the REST
+      // /api/messages/addmsg route, so the socket layer can't be used
+      // to bypass it.
+      const me = await User.findById(socket.userId).select("friends");
+      const isFriend = me?.friends?.some((f) => f.toString() === data.to);
+      if (!isFriend) return;
 
-  socket.on("send-msg", (data) => {
-    const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
-      socket.to(sendUserSocket).emit("msg-receive", data.msg);
+      const sendUserSocket = onlineUsers.get(data.to);
+      if (sendUserSocket) {
+        socket.to(sendUserSocket).emit("msg-receive", data.msg);
+      }
+    } catch (err) {
+      // silently drop malformed events
     }
   });
 
